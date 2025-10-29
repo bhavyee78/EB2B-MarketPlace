@@ -6,6 +6,9 @@
 .env.production
 *.env
 
+# Claude Code
+.claude/
+
 # Dependencies
 node_modules/
 .pnp
