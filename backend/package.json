@@ -1,0 +1,48 @@
+{
+    "name": "premier-backend",
+    "version": "1.0.0",
+    "scripts": {
+        "dev": "nest start --watch",
+        "build": "nest build",
+        "start": "node dist/main",
+        "prisma:generate": "prisma generate",
+        "prisma:migrate": "prisma migrate dev",
+        "prisma:seed": "ts-node prisma/seed.ts",
+        "test": "jest"
+    },
+    "dependencies": {
+        "@aws-sdk/client-s3": "^3.0.0",
+        "@nestjs/common": "^10.0.0",
+        "@nestjs/config": "^4.0.2",
+        "@nestjs/core": "^10.0.0",
+        "@nestjs/jwt": "^10.0.0",
+        "@nestjs/mapped-types": "^2.1.0",
+        "@nestjs/passport": "^10.0.0",
+        "@nestjs/platform-express": "^10.0.0",
+        "@nestjs/platform-socket.io": "^10.4.20",
+        "@nestjs/websockets": "^10.4.20",
+        "@prisma/client": "^5.0.0",
+        "@types/adm-zip": "^0.5.7",
+        "adm-zip": "^0.5.16",
+        "bcrypt": "^5.1.1",
+        "class-transformer": "^0.5.1",
+        "class-validator": "^0.14.0",
+        "multer": "^1.4.5-lts.1",
+        "mysql2": "^3.14.3",
+        "openai": "^5.16.0",
+        "passport": "^0.6.0",
+        "passport-jwt": "^4.0.1",
+        "socket.io": "^4.8.1",
+        "ws": "^8.18.3",
+        "xlsx": "^0.18.5"
+    },
+    "devDependencies": {
+        "@types/bcrypt": "^5.0.0",
+        "@types/multer": "^1.4.13",
+        "@types/node": "^20.0.0",
+        "@types/ws": "^8.18.1",
+        "prisma": "^5.0.0",
+        "ts-node": "^10.9.0",
+        "typescript": "^5.0.0"
+    }
+}

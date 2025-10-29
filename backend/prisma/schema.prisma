@@ -1,0 +1,490 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  RETAILER
+  ADMIN
+  SALESMAN
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum ProductStatus {
+  ACTIVE
+  HIDDEN
+  DRAFT
+}
+
+enum OrderStatus {
+  DRAFT
+  PENDING
+  CONFIRMED
+  PACKED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum RfqStatus {
+  OPEN
+  QUOTED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  NOTE
+  TASK
+  FOLLOW_UP
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id            String          @id @default(uuid())
+  email         String          @unique
+  passwordHash  String          @map("password_hash")
+  fullName      String          @map("full_name")
+  phone         String?
+  role          UserRole        @default(RETAILER)
+  companyName   String?         @map("company_name")
+  locale        String          @default("en")
+  status        UserStatus      @default(ACTIVE)
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  
+  // Existing relations
+  orders        Order[]
+  rfqs          Rfq[]
+  outlets       RetailerOutlet[]
+  createdOffers Offer[]
+  
+  // Sales CRM relations
+  assignedLeads Lead[]          @relation("AssignedLeads")
+  activities    Activity[]      @relation("UserActivities")
+  assignedTasks Task[]          @relation("AssignedTasks")
+  salesTargets  SalesTarget[]   @relation("SalesTargets")
+  
+  @@map("users")
+}
+
+model Product {
+  id                   String        @id @default(uuid())
+  sku                  String        @unique
+  name                 String
+  description          String?
+  images               Json          @default("[]")
+  category             String?
+  collection           String?
+  tags                 Json          @default("[]")
+  feature              String?       // e.g. "Fast Selling", "Must Buy", "Top Choice"
+  moq                  Int
+  price                Decimal       @db.Decimal(10, 2)
+  pcPrice              Decimal?      @map("pc_price") @db.Decimal(10, 2)
+  csPrice              Decimal?      @map("cs_price") @db.Decimal(10, 2)
+  pcQuantity           Int?          @map("pc_quantity")
+  csQuantity           Int?          @map("cs_quantity")
+  packSize             String?       @map("pack_size")
+  leadTimeDays         Int?          @map("lead_time_days")
+  countriesBoughtIn    Json          @default("[]") @map("countries_bought_in")
+  customizationOptions Json          @default("[]") @map("customization_options")
+  status               ProductStatus @default(ACTIVE)
+  aiSuggestion         String?       @map("ai_suggestion")
+  filename             String?       @map("filename")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+  
+  orderItems           OrderItem[]
+  rfqs                 Rfq[]
+  sales                Sale[]
+  freeItemOffers       Offer[]               @relation("FreeItem")
+  offerScopes          OfferScopeProduct[]   @relation("OfferScopes")
+  
+  @@index([category])
+  @@index([collection])
+  @@index([status])
+  @@index([feature])
+  @@map("products")
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  userId          String      @map("user_id")
+  orderNumber     String      @unique @map("order_number")
+  status          OrderStatus @default(DRAFT)
+  currency        String      @default("GBP")
+  totalAmount     Decimal?    @map("total_amount") @db.Decimal(10, 2)
+  
+  // Enhanced amount tracking
+  initialAmount   Decimal?    @map("initial_amount") @db.Decimal(10, 2)  // Before discounts
+  billAmount      Decimal?    @map("bill_amount") @db.Decimal(10, 2)     // After discounts
+  netAmount       Decimal?    @map("net_amount") @db.Decimal(10, 2)      // After add-ons
+  
+  addOns          Json        @default("{}") @map("add_ons")
+  placedAt        DateTime?   @map("placed_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  
+  user            User        @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+  
+  @@index([userId, status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id                String   @id @default(uuid())
+  orderId           String   @map("order_id")
+  productId         String   @map("product_id")
+  
+  // Quantity fields - all individual quantities
+  initialPcQuantity Int      @default(0) @map("initial_pc_quantity")
+  initialCsQuantity Int      @default(0) @map("initial_cs_quantity")
+  netQuantity       Int      @map("net_quantity") // Always in pieces (PCs)
+  
+  // Amount fields
+  initialAmount     Decimal  @map("initial_amount") @db.Decimal(10, 2) // Before discount
+  billAmount        Decimal  @map("bill_amount") @db.Decimal(10, 2)    // After discount
+  netAmount         Decimal  @map("net_amount") @db.Decimal(10, 2)     // After add-ons (same as bill if no add-ons)
+  
+  // Legacy fields for compatibility
+  quantity          Int      // Will store netQuantity for backward compatibility
+  unitPrice         Decimal  @map("unit_price") @db.Decimal(10, 2)
+  moqAtOrder        Int      @map("moq_at_order")
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product           Product  @relation(fields: [productId], references: [id])
+  
+  @@map("order_items")
+}
+
+model Rfq {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  productId    String    @map("product_id")
+  requestedQty Int       @map("requested_qty")
+  status       RfqStatus @default(OPEN)
+  quotationUrl String?   @map("quotation_url")
+  note         String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  
+  user         User      @relation(fields: [userId], references: [id])
+  product      Product   @relation(fields: [productId], references: [id])
+  
+  @@index([status])
+  @@index([userId])
+  @@map("rfqs")
+}
+
+model Sale {
+  id         String   @id @default(uuid())
+  productId  String   @map("product_id")
+  country    String?
+  period     DateTime
+  unitsSold  Int      @default(0) @map("units_sold")
+  revenue    Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  
+  product    Product  @relation(fields: [productId], references: [id])
+  
+  @@index([productId, period])
+  @@map("sales")
+}
+
+model RetailerOutlet {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  outletName  String   @map("outlet_name")
+  addressJson Json?    @map("address_json")
+  vatNo       String?  @map("vat_no")
+  buyingGroup String?  @map("buying_group")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  user        User     @relation(fields: [userId], references: [id])
+  
+  @@map("retailer_outlets")
+}
+
+model Banner {
+  id          String   @id @default(uuid())
+  title       String?
+  description String?
+  imageUrl    String   @map("image_url")
+  linkUrl     String?  @map("link_url")
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@index([isActive, sortOrder])
+  @@map("banners")
+}
+
+enum OfferType {
+  FREE_ITEM
+  PERCENT_OFF
+  AMOUNT_OFF
+}
+
+model Offer {
+  id                  String    @id @default(uuid())
+  name                String
+  description         String?
+  type                OfferType
+
+  // type-specific params
+  percentOff          Decimal?  @db.Decimal(5,2)
+  amountOff           Decimal?  @db.Decimal(10,2)
+  freeItemProductId   String?   @map("free_item_product_id")
+  freeItemQty         Int?      @default(1) @map("free_item_qty")
+
+  // eligibility
+  startsAt            DateTime? @map("starts_at")
+  endsAt              DateTime? @map("ends_at")
+  minQuantity         Int       @default(0) @map("min_quantity")
+  minOrderAmount      Decimal?  @db.Decimal(10,2) @map("min_order_amount")
+  appliesToAnyQty     Boolean   @default(true) @map("applies_to_any_qty")
+  maxPerUser          Int?      @map("max_per_user")
+  maxTotalRedemptions Int?      @map("max_total_redemptions")
+  priority            Int       @default(0)
+  isStackable         Boolean   @default(false) @map("is_stackable")
+  isActive            Boolean   @default(true) @map("is_active")
+
+  createdByUserId     String    @map("created_by_user_id")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  // relations
+  createdBy           User      @relation(fields: [createdByUserId], references: [id])
+  freeItemProduct     Product?  @relation("FreeItem", fields: [freeItemProductId], references: [id])
+  scopesProducts      OfferScopeProduct[]
+  scopesCategories    OfferScopeCategory[]
+  scopesCollections   OfferScopeCollection[]
+
+  @@index([type])
+  @@index([isActive])
+  @@index([startsAt, endsAt])
+  @@index([priority])
+  @@map("offers")
+}
+
+model OfferScopeProduct {
+  id        String  @id @default(uuid())
+  offerId   String  @map("offer_id")
+  productId String  @map("product_id")
+
+  offer     Offer   @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  product   Product @relation("OfferScopes", fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([offerId, productId])
+  @@map("offer_scope_products")
+}
+
+model OfferScopeCategory {
+  id        String @id @default(uuid())
+  offerId   String @map("offer_id")
+  category  String
+
+  offer     Offer  @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@unique([offerId, category])
+  @@map("offer_scope_categories")
+}
+
+model OfferScopeCollection {
+  id         String @id @default(uuid())
+  offerId    String @map("offer_id")
+  collection String
+
+  offer      Offer  @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@index([collection])
+  @@unique([offerId, collection])
+  @@map("offer_scope_collections")
+}
+
+model CollectionImage {
+  id         String   @id @default(uuid())
+  collection String   @unique
+  imageUrl   String   @map("image_url")
+  altText    String?  @map("alt_text")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([collection])
+  @@index([isActive])
+  @@map("collection_images")
+}
+
+model FeaturePriority {
+  id        String   @id @default(uuid())
+  feature   String   @unique      // e.g. "Fast Selling"
+  priority  Int      @default(0)  // lower number = higher section (1 above 2)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([priority])
+  @@index([isActive])
+  @@map("feature_priorities")
+}
+
+// Sales CRM Models
+model Lead {
+  id              String      @id @default(uuid())
+  companyName     String      @map("company_name")
+  contactName     String      @map("contact_name")
+  email           String?
+  phone           String?
+  website         String?
+  address         Json?       // Structured address data
+  industry        String?
+  companySize     String?     @map("company_size") // e.g., "1-10", "11-50", "51-200"
+  
+  // Lead management
+  status          LeadStatus  @default(NEW)
+  source          String?     // e.g., "Website", "Cold Call", "Referral"
+  assignedToId    String?     @map("assigned_to_id")
+  estimatedValue  Decimal?    @map("estimated_value") @db.Decimal(10, 2)
+  closeProbability Int?       @map("close_probability") // 0-100 percentage
+  expectedCloseDate DateTime? @map("expected_close_date")
+  
+  // Tracking
+  lastContactDate DateTime?   @map("last_contact_date")
+  nextFollowUpDate DateTime?  @map("next_follow_up_date")
+  notes           String?     @db.Text
+  tags            Json        @default("[]")
+  
+  // Metadata
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  
+  // Relations
+  assignedTo      User?       @relation("AssignedLeads", fields: [assignedToId], references: [id])
+  activities      Activity[]
+  tasks           Task[]
+  
+  @@index([status])
+  @@index([assignedToId])
+  @@index([expectedCloseDate])
+  @@map("leads")
+}
+
+model Activity {
+  id          String       @id @default(uuid())
+  leadId      String?      @map("lead_id")
+  userId      String       @map("user_id") // Salesman who performed the activity
+  type        ActivityType
+  subject     String
+  description String?      @db.Text
+  duration    Int?         // Duration in minutes
+  
+  // Contact details (for calls/meetings)
+  contactEmail String?     @map("contact_email")
+  contactPhone String?     @map("contact_phone")
+  
+  // Outcome tracking
+  outcome     String?      // e.g., "Interested", "Not interested", "Follow up needed"
+  nextAction  String?      @map("next_action")
+  
+  // Scheduling
+  scheduledAt DateTime?    @map("scheduled_at")
+  completedAt DateTime?    @map("completed_at")
+  
+  // Metadata
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  
+  // Relations
+  lead        Lead?        @relation(fields: [leadId], references: [id])
+  user        User         @relation("UserActivities", fields: [userId], references: [id])
+  
+  @@index([leadId])
+  @@index([userId])
+  @@index([type])
+  @@index([scheduledAt])
+  @@map("activities")
+}
+
+model Task {
+  id          String     @id @default(uuid())
+  leadId      String?    @map("lead_id")
+  assignedToId String    @map("assigned_to_id")
+  title       String
+  description String?    @db.Text
+  status      TaskStatus @default(PENDING)
+  priority    Int        @default(2) // 1=High, 2=Medium, 3=Low
+  
+  // Scheduling
+  dueDate     DateTime?  @map("due_date")
+  completedAt DateTime?  @map("completed_at")
+  
+  // Metadata
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  
+  // Relations
+  lead        Lead?      @relation(fields: [leadId], references: [id])
+  assignedTo  User       @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  
+  @@index([assignedToId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("tasks")
+}
+
+model SalesTarget {
+  id          String   @id @default(uuid())
+  salesmanId  String   @map("salesman_id")
+  period      String   // e.g., "2024-Q1", "2024-01"
+  targetType  String   @map("target_type") // "revenue", "leads", "deals"
+  targetValue Decimal  @map("target_value") @db.Decimal(15, 2)
+  actualValue Decimal  @default(0) @map("actual_value") @db.Decimal(15, 2)
+  
+  // Metadata
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  salesman    User     @relation("SalesTargets", fields: [salesmanId], references: [id])
+  
+  @@unique([salesmanId, period, targetType])
+  @@index([period])
+  @@map("sales_targets")
+}
