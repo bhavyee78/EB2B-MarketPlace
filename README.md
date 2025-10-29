@@ -1,16 +1,55 @@
 # EB2B MarketPlace
 
-A modern B2B marketplace platform with AI-powered sales agents for Premier Decorations. This platform enables businesses to browse products, place orders, and interact with intelligent sales agents through chat and voice interfaces.
+A modern B2B marketplace platform with AI-powered sales agents for any business which is B2B Trading. This platform enables businesses to browse products, place orders, and interact with intelligent sales agents through chat and voice interfaces.
 
-## Features
+🔐 Multi-Level User Access
 
-### 🛍️ Marketplace
-- Product catalog with advanced filtering and search
-- Collections: Christmas, Easter, Autumn, Valentine's, Halloween
-- Categories: Wreaths, Garlands, Decorations, Table Accessories, Lighting, Baskets
-- Shopping cart and order management
-- Request for Quote (RFQ) system
-- Dynamic offers and promotions
+The platform supports a multi-tier login system for different roles within a B2B ecosystem:
+
+🛠️ Admin (Business Owner)
+
+Access full control dashboard
+
+Upload and manage products
+
+Configure retailer dashboards
+
+Create and manage offers, nudges & notifications
+
+Track KPIs and business performance
+
+Monitor and evaluate field staff/salesman activity
+
+🛒 Retailer (Customers of the Business)
+
+Browse product catalog and custom collections
+
+Place orders and reorders easily
+
+Interact with AI sales agent "Ivanna" via chat/voice
+
+Access ready-made product baskets and offers
+
+🚀 Salesman (Field Staff)
+
+View assigned retailers and assist in order placements
+
+Track personal performance metrics
+
+Support relationship-building between brand and retailers
+
+
+🛍️ Marketplace
+
+Product catalog with advanced filtering and search
+
+AI-powered automatic categorization of products
+
+Customisable collections section and ready-made baskets
+
+Dynamic offers and promotions
+
+Seamless cart and order management
 
 ### 🤖 AI Sales Agent
 - **Chat Interface**: Text-based conversation with AI sales agent "Ivanna"
@@ -274,12 +313,23 @@ npm run start
 
 This project is proprietary and confidential.
 
-## Support
-
-For support, email support@premierdecorations.com or open an issue in the repository.
-
 ## Acknowledgments
 
 - OpenAI for GPT-4 and Realtime API
 - NestJS and Next.js communities
 - Prisma for database tooling
+
+## Screenshots
+Login page
+<img width="376" height="812" alt="image" src="https://github.com/user-attachments/assets/1e19c52c-51c5-4c06-91f5-eae103633a21" />
+
+Retailer's Home Screen
+<img width="376" height="813" alt="image" src="https://github.com/user-attachments/assets/81f7ba70-34ef-415b-b924-ad3d0d6f1a7d" />
+
+Admins Dashboard
+<img width="1439" height="898" alt="image" src="https://github.com/user-attachments/assets/edb7b134-7afd-440a-8744-39a86f7acb18" />
+
+
+
+
+
