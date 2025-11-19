@@ -19,6 +19,12 @@ This MVP was built for a UK-based seasonal décor wholesaler (Premier Decoration
 - Gives the sales team a live view of retailer activity and performance, improving route planning and follow-ups.
 - Designed to replace spreadsheet/WhatsApp-based ordering with a structured, data-driven platform.
 
+## 📌 Project Status
+
+- Current stage: Working MVP under active development.
+- Deployed privately for demos and internal testing with the client.
+- Roadmap: advanced analytics dashboard, multi-tenant support, and deeper CRM integrations.
+
 🚀 What is Planned
 Planned integration of AI-driven analytics, including inventory intelligence, demand forecasting, and SKU-level restock recommendations based on internal sales data combined with external market signals.
 
