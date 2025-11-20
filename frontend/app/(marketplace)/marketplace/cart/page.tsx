@@ -71,9 +71,15 @@ export default function CartPage() {
       // Clear cart after successful order
       clearCart();
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error placing order:', error);
-      alert('Sorry, there was an error placing your order. Please try again.');
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
+      console.error('Full error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: errorMessage
+      });
+      alert(`Sorry, there was an error placing your order: ${errorMessage}\n\nPlease check the browser console for more details.`);
     } finally {
       setIsProcessing(false);
     }

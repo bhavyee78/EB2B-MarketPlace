@@ -43,8 +43,11 @@ export class OrdersService {
   }
 
   async create(dto: any, userId: string) {
+    console.log('Creating order for user:', userId);
+    console.log('Order DTO:', JSON.stringify(dto, null, 2));
+
     const orderNumber = `ORD-${Date.now()}`;
-    
+
     // Group cart items by productId to consolidate PC and CS quantities
     const consolidatedItems = new Map();
     
