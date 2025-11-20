@@ -47,19 +47,29 @@ export default function MarketplaceHome() {
         axios.get('/api/collection-images'),
         axios.get('/api/home/feature-blocks?perFeature=12')
       ]);
-      
+
       console.log('Collections:', collectionsRes.data);
       console.log('Banners:', bannersRes.data);
       console.log('Feature blocks:', featureBlocksRes.data);
-      
+
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
       setCollections(collectionsRes.data);
-      setBanners(bannersRes.data);
+
+      // Prepend backend URL to banner image URLs
+      const bannersWithFullUrls = bannersRes.data.map((banner: any) => ({
+        ...banner,
+        imageUrl: banner.imageUrl.startsWith('http') ? banner.imageUrl : `${backendUrl}${banner.imageUrl}`
+      }));
+      setBanners(bannersWithFullUrls);
+
       setFeatureBlocks(featureBlocksRes.data.blocks || []);
-      
-      // Convert collection images array to map
+
+      // Convert collection images array to map and prepend backend URL
       if (collectionImagesRes.data.success) {
         const imageMap = collectionImagesRes.data.data.reduce((acc: { [key: string]: string }, img: any) => {
-          acc[img.collection] = img.imageUrl;
+          const fullUrl = img.imageUrl.startsWith('http') ? img.imageUrl : `${backendUrl}${img.imageUrl}`;
+          acc[img.collection] = fullUrl;
           return acc;
         }, {});
         setCollectionImages(imageMap);
