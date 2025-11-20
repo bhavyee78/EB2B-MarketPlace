@@ -1,0 +1,4 @@
+sku,name,description,category,collection,tags,moq,price,pc_price,cs_price,pc_quantity,cs_quantity,pack_size,lead_time_days,countries_bought_in,customization_options,filename,ai_suggestion
+SKU001,Sample Product 1,This is a sample product description,Electronics,Tech Collection,"Best Seller,New Arrival",10,25.99,2.99,59.99,1,20,Pack of 10,7,"UK,US,Canada","Color,Size",sample-product-1,Great for tech enthusiasts
+SKU002,Sample Product 2,Another sample product for your inventory,Home & Garden,Garden Collection,"Eco Friendly,Popular",5,45.50,4.50,180.00,1,40,Pack of 5,14,"UK,EU","Material,Pattern",sample-product-2,Perfect for home improvement
+SKU003,Sample Product 3,Premium quality sample item,Fashion,Premium Collection,"Luxury,Trendy",1,199.99,19.99,799.96,1,4,Single Item,21,"Global","Size,Color,Style",sample-product-3,High-end fashion piece
